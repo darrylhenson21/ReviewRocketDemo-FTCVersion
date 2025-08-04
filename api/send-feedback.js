@@ -39,8 +39,16 @@ export default async function handler(req, res) {
     ? {
         from   : process.env.FROM_EMAIL,
         to     : email,
-        subject: "Thanks for your feedback – we’ll make things right",
-        html   : `<p>Hi ${name || ""},<br>Thanks for telling us what happened. Our team will review and reach out if needed.</p>`,
+        subject: "What Happens When Someone Leaves a 3-Star Review (Important)",
+        html   : `<p>Hi ${name || ""},<br>
+        
+        I wanted to explain what just happened—and why it’s so important for protecting your business and staying compliant.
+      🛑 When someone tries to leave a 3-star (or lower) review:
+        <li>They’re politely redirected to a private feedback page (like the one you just saw).</li>
+        <li>They’re asked what went wrong and how your business can make it right.</li>
+        <li>They’re still given the option to leave a public review—because FTC guidelines require that.</li>
+        <li>Most people choose to give you a second chance instead. ❤️</li>
+</p>`,
       }
     : null;
 
