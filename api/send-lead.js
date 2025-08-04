@@ -74,6 +74,11 @@ ${JSON.stringify(body, null, 2)}
           <h2 style="color: #0ea5e9;">New Review Rocket Demo Lead</h2>
           
           <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0;">
+          <p>Hey,</p> <br>
+            <p>You’ve got a hot lead!</p> <br>
+            <p>${leadName} just tested your Review Rocket demo and wants more info on setting this up for his business.</p> <br>
+            <p>Here’s what he submitted:</p> <br>
+            <br>
             <h3>Contact Information</h3>
             <p><strong>Name:</strong> ${leadName}</p>
             <p><strong>Email:</strong> ${leadEmail}</p>
