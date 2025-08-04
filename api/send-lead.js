@@ -44,6 +44,11 @@ export default async function handler(req, res) {
     const ownerEmailContent = `
 === NEW REVIEW ROCKET DEMO LEAD ===
 
+Hey,
+You’ve got a hot lead!
+${leadName} just tested your Review Rocket demo and wants more info on setting this up for his business.
+Here’s what he submitted:
+
 Contact Information:
   Name: ${leadName}
   Email: ${leadEmail}
