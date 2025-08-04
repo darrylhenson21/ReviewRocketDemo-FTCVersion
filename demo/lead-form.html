@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Get Started - Review Rocket Demo</title>
+    <link rel="stylesheet" href="src/ui.css">
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <img id="logo" src="public/logo.svg" alt="Review Rocket Logo" class="logo">
+            <h1 class="headline">Get Review Rocket for Your Business</h1>
+            <p class="subhead">Fill out the form below and we'll send you setup instructions and pricing details.</p>
+        </header>
+
+        <main class="main">
+            <form id="lead-form" class="form">
+                <div class="form-group">
+                    <label for="first-name" class="label">First Name *</label>
+                    <input type="text" id="first-name" name="firstName" class="input" placeholder="Your first name" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="last-name" class="label">Last Name</label>
+                    <input type="text" id="last-name" name="lastName" class="input" placeholder="Your last name">
+                </div>
+
+                <div class="form-group">
+                    <label for="email-address" class="label">Email Address *</label>
+                    <input type="email" id="email-address" name="email" class="input" placeholder="your@email.com" required>
+                </div>
+
+                <!-- Honeypot field for bot protection -->
+                <input type="text" name="_hp" style="display: none;" tabindex="-1" autocomplete="off">
+
+                <button type="submit" id="submit-lead" class="btn btn-primary btn-large">
+                    Send Me Setup Details
+                </button>
+            </form>
+
+            <div id="success-message" class="success-message" style="display: none;">
+                <h3>Thank You!</h3>
+                <p>We've received your information and will send you setup details within 24 hours.</p>
+                <p>In the meantime, feel free to <a href="index.html" class="link">try the demo again</a> or contact us with any questions.</p>
+            </div>
+
+            <div class="actions">
+                <a href="index.html" class="link">← Back to demo</a>
+            </div>
+        </main>
+    </div>
+
+    <script type="module">
+        import { config } from './src/config.js';
+
+        document.addEventListener('DOMContentLoaded', () => {
+            // Apply branding
+            document.getElementById('logo').src = config.logoPath;
+            document.documentElement.style.setProperty('--primary-color', config.primaryColor);
+
+            // Get prefilled data from URL parameters and sessionStorage
+            const urlParams = new URLSearchParams(window.location.search);
+            const prefillName = urlParams.get('name') || sessionStorage.getItem('rr_name') || '';
+            const prefillEmail = urlParams.get('email') || sessionStorage.getItem('rr_email') || '';
+
+            console.log('Prefill data found:', { 
+                urlName: urlParams.get('name'), 
+                urlEmail: urlParams.get('email'),
+                sessionName: sessionStorage.getItem('rr_name'),
+                sessionEmail: sessionStorage.getItem('rr_email'),
+                finalName: prefillName,
+                finalEmail: prefillEmail
+            });
+
+            // Prefill form fields if data exists
+            if (prefillName) {
+                // Split name into first/last if it contains space
+                const nameParts = prefillName.trim().split(' ');
+                document.getElementById('first-name').value = nameParts[0];
+                if (nameParts.length > 1) {
+                    document.getElementById('last-name').value = nameParts.slice(1).join(' ');
+                }
+                console.log('Prefilled name fields:', nameParts);
+            }
+
+            if (prefillEmail) {
+                document.getElementById('email-address').value = prefillEmail;
+                console.log('Prefilled email field:', prefillEmail);
+            }
+
+            // Handle form submission
+            document.getElementById('lead-form').addEventListener('submit', async (e) => {
+                e.preventDefault();
+                
+                const formData = new FormData(e.target);
+                const honeypot = formData.get('_hp');
+                
+                // Block if honeypot is filled (bot detection)
+                if (honeypot) {
+                    return;
+                }
+
+                // Collect form data
+                const leadData = {
+                    firstName: formData.get('firstName'),
+                    lastName: formData.get('lastName'),
+                    email: formData.get('email'),
+                    source: 'Business Inquiry Button',
+                    timestamp: new Date().toISOString(),
+                    demoData: {
+                        originalName: sessionStorage.getItem('rr_name') || '',
+                        originalEmail: sessionStorage.getItem('rr_email') || ''
+                    }
+                };
+
+                // In a real implementation, you would send this to your backend
+                // For demo purposes, we'll just show success message
+                console.log('Lead captured:', leadData);
+
+                // Handle form submission based on environment
+                console.log('Submitting lead data:', leadData);
+                
+                if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+                    // Local development - show success immediately
+                    console.log('Local development mode - simulating successful submission');
+                    document.getElementById('lead-form').style.display = 'none';
+                    document.getElementById('success-message').style.display = 'block';
+                } else {
+                    // Production - send to Vercel serverless function
+                    try {
+                        const response = await fetch(config.leadCaptureUrl, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                            },
+                            body: JSON.stringify(leadData)
+                        });
+
+                        if (!response.ok) {
+                            throw new Error(`HTTP error! status: ${response.status}`);
+                        }
+
+                        const result = await response.json();
+                        console.log('✅ Lead submitted successfully:', result);
+                        
+                        // Show success message
+                        document.getElementById('lead-form').style.display = 'none';
+                        document.getElementById('success-message').style.display = 'block';
+                        
+                    } catch (error) {
+                        console.error('❌ Lead capture failed:', error);
+                        alert('Sorry, there was an error submitting your information. Please try again or contact us directly.');
+                        return;
+                    }
+                }
+                    console.log('No lead capture URL configured, showing success anyway');
+                    document.getElementById('lead-form').style.display = 'none';
+                    document.getElementById('success-message').style.display = 'block';
+                }
+
+                // Clear session storage
+                sessionStorage.removeItem('rr_name');
+                sessionStorage.removeItem('rr_email');
+            });
+        });
+    </script>
+</body>
+</html>

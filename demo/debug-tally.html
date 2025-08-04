@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Debug Tally Prefill</title>
+</head>
+<body>
+    <h1>Debug Tally Form Prefill</h1>
+    
+    <div>
+        <h3>Current sessionStorage:</h3>
+        <div id="storage-debug"></div>
+    </div>
+    
+    <div>
+        <h3>Generated URLs to test:</h3>
+        <div id="url-debug"></div>
+    </div>
+    
+    <script type="module">
+        // Store test data
+        sessionStorage.setItem('rr_name', 'Debug User');
+        sessionStorage.setItem('rr_email', 'debug@test.com');
+        sessionStorage.setItem('rr_rating', '5');
+        
+        // Show current storage
+        const storageDiv = document.getElementById('storage-debug');
+        storageDiv.innerHTML = `
+            <p>rr_name: ${sessionStorage.getItem('rr_name')}</p>
+            <p>rr_email: ${sessionStorage.getItem('rr_email')}</p>
+            <p>rr_rating: ${sessionStorage.getItem('rr_rating')}</p>
+        `;
+        
+        // Test different field patterns
+        const urlDiv = document.getElementById('url-debug');
+        const baseUrl = 'https://tally.so/r/wg8KXl';
+        
+        const fieldPatterns = [
+            // Common patterns
+            { name: 'name', email: 'email' },
+            { name: 'full_name', email: 'email_address' },
+            { name: 'Full Name', email: 'Email Address' },
+            { name: 'question_1', email: 'question_2' },
+            { name: 'q1', email: 'q2' },
+            { name: 'field_1', email: 'field_2' },
+        ];
+        
+        fieldPatterns.forEach((pattern, i) => {
+            const params = new URLSearchParams({
+                [pattern.name]: sessionStorage.getItem('rr_name'),
+                [pattern.email]: sessionStorage.getItem('rr_email'),
+                rating: sessionStorage.getItem('rr_rating')
+            });
+            
+            const url = `${baseUrl}?${params.toString()}`;
+            const link = document.createElement('a');
+            link.href = url;
+            link.target = '_blank';
+            link.textContent = `Test ${i+1}: ${pattern.name}/${pattern.email}`;
+            link.style.display = 'block';
+            link.style.marginBottom = '5px';
+            
+            const div = document.createElement('div');
+            div.appendChild(link);
+            div.innerHTML += `<small style="color: #666;">${url}</small><br><br>`;
+            
+            urlDiv.appendChild(div);
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,146 @@
+1. Project Structure (static demo + serverless API)
+bash
+Copy
+Edit
+/demo/                 # your static demo pages
+/api/send-lead.js      # Vercel serverless function (Node runtime)
+vercel.json            # rewrites (make sure /api stays untouched)
+Do NOT put the API inside /demo. Vercel only auto-detects /api/* at root (or /pages/api in Next.js).
+
+2. vercel.json (fix your current rewrite)
+Your current config routes everything to /demo, so /api/* never hits the function.
+
+Use rewrites like this (new Vercel format):
+
+json
+Copy
+Edit
+{
+  "rewrites": [
+    { "source": "/api/(.*)", "destination": "/api/$1" },
+    { "source": "/(.*)", "destination": "/demo/$1" }
+  ]
+}
+If you’re stuck on the legacy "routes" array, ORDER MATTERS — put the /api rule first.
+
+3. Serverless function: /api/send-lead.js
+js
+Copy
+Edit
+// /api/send-lead.js
+import nodemailer from "nodemailer";
+
+export default async function handler(req, res) {
+  if (req.method !== "POST") return res.status(405).end("Method Not Allowed");
+
+  try {
+    const body = typeof req.body === "string" ? JSON.parse(req.body) : req.body;
+
+    const transporter = nodemailer.createTransport({
+      host: process.env.SMTP_HOST,
+      port: Number(process.env.SMTP_PORT || 465),
+      secure: process.env.SMTP_SECURE === "true", // true for 465, false for 587
+      auth: {
+        user: process.env.SMTP_USER,
+        pass: process.env.SMTP_PASS
+      }
+    });
+
+    await transporter.sendMail({
+      from: process.env.FROM_EMAIL,    // e.g. "Review Rocket <noreply@yourdomain.com>"
+      to: process.env.OWNER_EMAIL,     // where you get leads
+      subject: `New Demo Lead: ${body?.name || "Unknown"}`,
+      text: JSON.stringify(body, null, 2)
+    });
+
+    res.status(200).json({ ok: true });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ ok: false, error: "MAIL_FAIL" });
+  }
+}
+Don’t use Edge runtime; Nodemailer needs Node. (So don’t export config = { runtime: 'edge' }.)
+
+4. Client-side fetch (demo pages)
+js
+Copy
+Edit
+async function sendLead(payload) {
+  try {
+    await fetch("/api/send-lead", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload)
+    });
+  } catch (e) {
+    // swallow error in demo; you can console.error if needed
+  }
+}
+Call this when:
+
+Checkbox checked on page 1, or
+
+CTA button clicked (before redirecting), e.g.:
+
+js
+Copy
+Edit
+ctaBtn.addEventListener("click", (e) => {
+  const p = {
+    name: sessionStorage.getItem("rr_name") || "",
+    email: sessionStorage.getItem("rr_email") || "",
+    rating: sessionStorage.getItem("rr_rating") || "",
+    source: "demo-cta"
+  };
+  sendLead(p);
+  // continue to redirect…
+});
+5. Environment variables (Vercel → Project → Settings → Environment Variables)
+Set these:
+
+makefile
+Copy
+Edit
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=465
+SMTP_SECURE=true
+SMTP_USER=yourgmail@gmail.com
+SMTP_PASS=########  (Gmail app password)
+FROM_EMAIL=yourgmail@gmail.com
+OWNER_EMAIL=whereLeadsGo@you.com
+If using Gmail: must use an App Password (2FA on the account → App passwords).
+
+After adding env vars, redeploy. (Vercel won’t pick up changes until you redeploy.)
+
+6. QA Checklist
+Open <yourapp>.vercel.app/api/send-lead in browser → should return Method Not Allowed (405), not HTML or 404.
+
+Submit demo form → Network tab shows POST to /api/send-lead with 200 status.
+
+Check Vercel → Functions tab → see invocation logs (or error stack if 500).
+
+Receive email in OWNER_EMAIL inbox.
+
+Confirm no CORS errors (same-origin path avoids it).
+
+Confirm static pages still serve from /demo/*.
+
+7. Common Failure Points (tell the agent to verify)
+Wrong path: fetch('/demo/api/send-lead') instead of /api/send-lead.
+
+Rewrite swallowing API: /api never hits function.
+
+Edge runtime: Nodemailer fails if function runs on Edge.
+
+Env vars missing/typo: 500 error in function logs (“Invalid login”).
+
+Gmail security: Using normal password instead of app password.
+
+8. Optional niceties
+Validate payload shape server-side.
+
+Add a honeypot key in payload to ignore bots.
+
+Add rate limiting (middleware or simple in-function throttle, if abused).
+
+Return { ok: true } and handle UI state if you care.

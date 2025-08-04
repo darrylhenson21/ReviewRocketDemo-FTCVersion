@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Tally Prefill</title>
+</head>
+<body>
+    <h1>Testing Tally Form Prefill</h1>
+    
+    <script>
+        // Simulate data storage
+        sessionStorage.setItem('rr_name', 'John Doe');
+        sessionStorage.setItem('rr_email', 'john@example.com');
+        sessionStorage.setItem('rr_rating', '5');
+        
+        // Test different field name combinations
+        const testLinks = [
+            // Common Tally field patterns
+            'name=John%20Doe&email=john@example.com',
+            'full_name=John%20Doe&email_address=john@example.com',
+            'Full%20Name=John%20Doe&Email%20Address=john@example.com',
+            'question_1=John%20Doe&question_2=john@example.com',
+            // Add rating field too
+            'name=John%20Doe&email=john@example.com&rating=5'
+        ];
+        
+        testLinks.forEach((params, index) => {
+            const link = document.createElement('a');
+            link.href = `https://tally.so/r/wg8KXl?${params}`;
+            link.textContent = `Test ${index + 1}: ${params}`;
+            link.target = '_blank';
+            link.style.display = 'block';
+            link.style.marginBottom = '10px';
+            document.body.appendChild(link);
+        });
+    </script>
+</body>
+</html>

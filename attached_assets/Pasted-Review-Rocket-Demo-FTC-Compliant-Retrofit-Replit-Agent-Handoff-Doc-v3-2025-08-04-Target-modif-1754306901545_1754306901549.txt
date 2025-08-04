@@ -1,0 +1,126 @@
+Review Rocket Demo — FTC-Compliant Retrofit
+Replit Agent Handoff Doc · v3 (2025-08-04)
+Target: modify the existing static demo repo so every visitor—regardless of star rating—can reach the public-review link. No “review-gating.”
+
+0. Repo / Project Context
+Source ZIP you already imported: ReviewRocketDemo-main/
+
+Current hosting assumption: Vercel (static + /api/send-lead.js) — keep that.
+
+Working directory in Replit: ~/review-rocket-demo (rename as needed).
+
+1. Compliance Rules to Implement
+Requirement	Implementation guideline
+Public-review link must always be visible / reachable.	Never hide or remove it; low-star users must still be able to click it in the same session.
+You may encourage private resolution first, but cannot block.	Show apology + feedback and the public link on the same screen.
+Automatic redirect is allowed only after the user has already chosen to proceed.	OK to auto-redirect ≥4★, but still display the link on the landing page as a fallback.
+
+2. File-level Task List
+2.1 demo/index.html
+Remove the form action to thank-you.html / feedback.html.
+
+Add hidden divs for:
+
+.rr-apology-panel (contains apology + feedback textarea + public review link button)
+
+.rr-success-panel (optional message “…Thanks! You’ll be redirected…”) with public review link button (link identical).
+
+2.2 demo/src/main.js
+diff
+Copy
+Edit
+// (pseudo-patch)
+function onStarSelect(rating) {
+-  if (rating >= 4) window.location = config.publicReviewUrl;
+-  else window.location = 'feedback.html';
++  if (rating >= 4) {
++     showSuccessPanel();                   // show in-page confirmation
++     setTimeout(()=>window.location = config.publicReviewUrl, 1500);
++  } else {
++     showApologyPanel();                   // keep user on same URL
++  }
+}
+showApologyPanel() – unhide .rr-apology-panel, focus the textarea.
+
+showSuccessPanel() – unhide .rr-success-panel.
+
+Both panels: inject config.publicReviewUrl into their <a>.
+
+2.3 demo/feedback.html & demo/thank-you.html
+Delete these files (flow is now one-page).
+
+Update vercel.json rewrites if they referenced those paths.
+
+2.4 demo/src/config.js
+js
+Copy
+Edit
+export const config = {
+  brandName      : "Your Demo Biz",
+  publicReviewUrl: "https://g.page/r/...write-review",
+  apologyHeading : "We’re sorry we missed the mark.",
+  apologyBlurb   : "Tell us how we can make it right below — or leave a public review anyway:",
+  successHeading : "Thank you!",
+  successBlurb   : "One more click to share your 5-star experience:"
+};
+2.5 demo/src/ui.css
+Add basic styles for the two new panels; use the existing Tailwind utility classes where possible:
+
+css
+Copy
+Edit
+.rr-panel {
+  @apply border rounded-lg p-5 bg-slate-50 shadow;
+}
+.rr-apology-panel { @apply hidden; }
+.rr-success-panel { @apply hidden; }
+2.6 demo/public/logo.svg
+(No change; still configurable.)
+
+3. Testing Checklist (local & Vercel)
+npm run dev / static server → open index.html.
+
+Select 2 ★
+
+Apology panel appears.
+
+Public-review button clickable → opens Google review page.
+
+Select 5 ★
+
+Success panel flashes.
+
+After 1.5 s auto-redirects to publicReviewUrl.
+
+If JS disabled, success panel still shows link manually.
+
+Confirm no navigation to deprecated feedback.html or thank-you.html.
+
+Deploy to Vercel → Cloud test star paths again.
+
+Verify /api/send-lead.js remains untouched (lead-gen still works).
+
+4. Env Vars (unchanged)
+env
+Copy
+Edit
+SMTP_HOST=smtp.gmail.com
+SMTP_USER=yourgmail@example.com
+SMTP_PASS=app-password
+FROM_EMAIL=yourgmail@example.com
+OWNER_EMAIL=you@example.com
+5. Clean-Up
+Remove old pages from git to avoid accidental access.
+
+Update README to reflect new compliance-flow.
+
+Bump version in package.json to 1.1.0 with note “FTC-compliant rating flow”.
+
+Deliverable
+Push a PR / commit titled “FTC Compliance – unified rating page” containing:
+
+updated index.html, main.js, ui.css, config.js
+
+deleted feedback.html, thank-you.html
+
+README + pkg version bump.

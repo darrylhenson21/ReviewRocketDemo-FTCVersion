@@ -1,0 +1,25 @@
+{
+  "name": "review-rocket-demo",
+  "version": "1.0.0",
+  "description": "Review Rocket Demo with lead capture functionality",
+  "main": "index.html",
+  "scripts": {
+    "dev": "node server.js",
+    "dev-static": "python -m http.server 5000",
+    "build": "echo 'No build step required for static site'",
+    "deploy": "vercel --prod"
+  },
+  "dependencies": {
+    "nodemailer": "^6.9.0"
+  },
+  "devDependencies": {},
+  "keywords": [
+    "review",
+    "feedback",
+    "demo",
+    "static",
+    "vercel"
+  ],
+  "author": "Review Rocket",
+  "license": "MIT"
+}
