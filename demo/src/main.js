@@ -195,6 +195,37 @@ async function handleLeadCapture(name, email, rating) {
   }
 }
 
+// ─── NEW:  send the low-rating feedback to /api/send-feedback ──────────
+async function handlePrivateFeedback(name, email, feedback) {
+  if (!config.privateFeedbackUrl) return;       // <-- we’ll add this key in config.js
+
+  const payload = {
+    type: 'private-feedback',              // guard the serverless route
+    name: name     || 'Anonymous',
+    email: email    || '',
+    feedback: feedback || '',
+    timestamp: new Date().toISOString()
+  };
+
+  try {
+    const res = await fetch(config.privateFeedbackUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+
+    if (res.ok) {
+      console.log('✅ Private feedback sent');
+    } else {
+      console.warn('⚠️ Private feedback returned non-200');
+    }
+  } catch (err) {
+    console.warn('Private feedback failed:', err);
+  }
+}
+// ───────────────────────────────────────────────────────────────────────
+
+
 // Setup explainer functionality
 function setupExplainers() {
   if (!config.flags.showExplainers) return;
@@ -329,26 +360,34 @@ function showSuccessPanel() {
 
 function setupApologyFeedback() {
   const sendFeedbackBtn = document.getElementById('send-feedback-btn');
-  const textarea = document.getElementById('feedback-textarea');
-  
+  const textarea        = document.getElementById('feedback-textarea');
+
   if (sendFeedbackBtn && textarea) {
-    sendFeedbackBtn.addEventListener('click', () => {
+    sendFeedbackBtn.addEventListener('click', async () => {
       const feedback = textarea.value.trim();
-      
-      // Show success message
+      if (!feedback) {
+        alert('Please type a quick note before sending.');
+        return;
+      }
+
+      // pull name & email that were stored earlier (if any)
+      const name  = sessionStorage.getItem('rr_name')  || '';
+      const email = sessionStorage.getItem('rr_email') || '';
+
+      // 🔹 actually send it
+      await handlePrivateFeedback(name, email, feedback);
+
+      // UX feedback
       sendFeedbackBtn.textContent = '✓ Feedback Sent';
-      sendFeedbackBtn.disabled = true;
+      sendFeedbackBtn.disabled    = true;
       sendFeedbackBtn.classList.add('btn-success');
-      
-      // Optional: You could send this feedback to your server here
-      console.log('Private feedback:', feedback);
-      
-      // Re-enable after a few seconds for better UX
+
       setTimeout(() => {
         sendFeedbackBtn.textContent = 'Send Private Feedback';
-        sendFeedbackBtn.disabled = false;
+        sendFeedbackBtn.disabled    = false;
         sendFeedbackBtn.classList.remove('btn-success');
-      }, 3000);
+        textarea.value = '';
+      }, 4000);
     });
   }
 }
