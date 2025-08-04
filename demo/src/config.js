@@ -6,6 +6,7 @@ export const config = {
   
   // Lead capture configuration (back to nodemailer via Vercel serverless)
   leadCaptureUrl: "/api/send-lead", // Vercel serverless function endpoint
+  privateFeedbackUrl: "/api/send-feedback",// <-- NEW: used by the apology panel
   
   cta: {
     show: true,
